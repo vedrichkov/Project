@@ -1665,7 +1665,6 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   border-radius: 100px;
   min-height: auto;
 }
-.cal-fullscreen-legend .tier-card .tier-meta { display: none; }
 .cal-fullscreen-legend .tier-card .tier-tag {
   font-size: 10px; letter-spacing: 0.16em; margin: 0;
 }
@@ -1722,8 +1721,8 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   border-radius: 100px;
   min-height: auto;
 }
-.chart-wrap:fullscreen .tier-card .tier-meta,
-.chart-wrap:-webkit-full-screen .tier-card .tier-meta { display: none; }
+.chart-wrap:fullscreen .tier-card,
+.chart-wrap:-webkit-full-screen .tier-card { position: relative; cursor: pointer; }
 .chart-wrap:fullscreen .tier-card .tier-tag,
 .chart-wrap:-webkit-full-screen .tier-card .tier-tag {
   font-size: 10px; letter-spacing: 0.16em; margin: 0;
@@ -1732,6 +1731,43 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 .chart-wrap:-webkit-full-screen .tier-card::before {
   margin: 0;
 }
+/* tier-meta becomes a tooltip in fullscreen: hidden by default, shown on hover/tap */
+.chart-wrap:fullscreen .tier-card .tier-meta,
+.chart-wrap:-webkit-full-screen .tier-card .tier-meta,
+.cal-fullscreen-legend .tier-card .tier-meta {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,28,.96);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s var(--ease);
+  z-index: 12;
+}
+.chart-wrap:fullscreen .tier-card:hover .tier-meta,
+.chart-wrap:fullscreen .tier-card.show-tip .tier-meta,
+.chart-wrap:-webkit-full-screen .tier-card:hover .tier-meta,
+.chart-wrap:-webkit-full-screen .tier-card.show-tip .tier-meta,
+.cal-fullscreen-legend .tier-card:hover .tier-meta,
+.cal-fullscreen-legend .tier-card.show-tip .tier-meta {
+  opacity: 1;
+}
+/* Subject toggles inside the fallback overlay */
+.cal-fullscreen-controls {
+  flex: 0 0 auto;
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+}
+.cal-fullscreen-controls .chart-toggle { padding: 6px 10px; font-size: 10.5px; }
+.cal-fullscreen-legend .tier-card { position: relative; cursor: pointer; }
 
 </style>
 </head>
@@ -1847,6 +1883,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     <div class="cal-fullscreen-overlay" id="calFullscreenOverlay" role="dialog" aria-modal="true" aria-label="Calendar in full screen">
       <button type="button" class="cal-fullscreen-close" id="calFullscreenClose" aria-label="Close full screen">&times;</button>
       <div class="cal-fullscreen-content">
+        <div class="cal-fullscreen-controls" id="calFullscreenControls"></div>
         <div class="cal-fullscreen-chart" id="calFullscreenChart"></div>
         <div class="cal-fullscreen-legend" id="calFullscreenLegend"></div>
       </div>
@@ -2251,7 +2288,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   <section id="risks">
     <div class="container">
       <div class="section-head reveal">
-        <h2>Two named <b>in advance</b></h2>
+        <h2>Two <b>considerations</b></h2>
         <p class="section-intro">Each one has a mitigation. Tap to expand.</p>
       </div>
 
@@ -2482,6 +2519,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   var fsClose = document.getElementById('calFullscreenClose');
   var fsChart = document.getElementById('calFullscreenChart');
   var fsLegend = document.getElementById('calFullscreenLegend');
+  var fsControls = document.getElementById('calFullscreenControls');
 
   function openNativeFullscreen() {
     var card = document.querySelector('.chart-wrap');
@@ -2500,17 +2538,64 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     if (!fsChart || !fsLegend) return;
     var srcSvg = document.getElementById('calChart');
     var srcLegend = document.querySelector('.tier-legend');
+    var srcControls = document.querySelector('.chart-controls');
     fsChart.innerHTML = '';
     fsLegend.innerHTML = '';
+    if (fsControls) fsControls.innerHTML = '';
     if (srcSvg) fsChart.appendChild(srcSvg.cloneNode(true));
     if (srcLegend) {
       Array.prototype.forEach.call(srcLegend.children, function(card) {
         fsLegend.appendChild(card.cloneNode(true));
       });
     }
+    if (srcControls && fsControls) {
+      Array.prototype.forEach.call(srcControls.children, function(btn) {
+        var clone = btn.cloneNode(true);
+        clone.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var key = clone.dataset.key;
+          if (key === 'math') return;
+          var nowActive = !clone.classList.contains('active');
+          clone.classList.toggle('active', nowActive);
+          // Mirror state to the original page button so closing the overlay preserves it
+          var origBtn = srcControls.querySelector('[data-key="' + key + '"]');
+          if (origBtn) origBtn.classList.toggle('active', nowActive);
+          // Update both SVGs' polyline overlays
+          var origOverlay = document.getElementById('calChart').querySelector('[data-overlay="' + key + '"]');
+          if (origOverlay) origOverlay.classList.toggle('show', nowActive);
+          var clonedSvg = fsChart.querySelector('svg');
+          if (clonedSvg) {
+            var clonedOverlay = clonedSvg.querySelector('[data-overlay="' + key + '"]');
+            if (clonedOverlay) clonedOverlay.classList.toggle('show', nowActive);
+          }
+        });
+        fsControls.appendChild(clone);
+      });
+    }
     if (fsOverlay) fsOverlay.classList.add('open');
     document.documentElement.style.overflow = 'hidden';
   }
+
+  /* Tap a tier pill in fullscreen to toggle its description tooltip.
+     Tap elsewhere to close any open tooltips. Hover still works on devices that support it. */
+  function isInFullscreenContext() {
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) return true;
+    if (fsOverlay && fsOverlay.classList.contains('open')) return true;
+    return false;
+  }
+  document.addEventListener('click', function(e) {
+    if (!isInFullscreenContext()) return;
+    var card = e.target.closest && e.target.closest('.tier-card');
+    var openTips = document.querySelectorAll('.tier-card.show-tip');
+    if (card) {
+      e.stopPropagation();
+      var wasOpen = card.classList.contains('show-tip');
+      openTips.forEach(function(c) { c.classList.remove('show-tip'); });
+      if (!wasOpen) card.classList.add('show-tip');
+    } else {
+      openTips.forEach(function(c) { c.classList.remove('show-tip'); });
+    }
+  });
   function openCalFullscreen() {
     if (!openNativeFullscreen()) openFallbackOverlay();
   }
