@@ -1638,6 +1638,13 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 }
 .cal-fullscreen-close:hover { background: rgba(255,255,255,.1); border-color: var(--accent); }
 
+/* When fullscreen is active (native or fallback), hide the topbar and other chrome so
+   the calendar is genuinely the only thing on screen. Body class is toggled by JS. */
+body.cal-fs-active .topbar,
+body.cal-fs-active footer { display: none !important; }
+/* Make sure the overlay is above everything else and stays put */
+.cal-fullscreen-overlay { z-index: 99999 !important; }
+
 /* Fullscreen fallback overlay (iPhone Safari). Mirrors the native :fullscreen layout. */
 .cal-fullscreen-content {
   position: absolute;
@@ -2551,11 +2558,16 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     var req = card.requestFullscreen || card.webkitRequestFullscreen || card.mozRequestFullScreen || card.msRequestFullscreen;
     if (!req) return false;
     try {
-      var result = req.call(card);
+      /* navigationUI: 'hide' asks the browser to hide its navigation chrome (Android Chrome
+         respects this; iOS Safari ignores). It's a hint, not a guarantee, but worth asking. */
+      var result;
+      try { result = req.call(card, { navigationUI: 'hide' }); }
+      catch (e) { result = req.call(card); }
       if (result && typeof result.catch === 'function') {
         result.catch(function() { openFallbackOverlay(); });
       }
       lockBackgroundScroll();
+      document.body.classList.add('cal-fs-active');
       return true;
     } catch (e) { return false; }
   }
@@ -2599,6 +2611,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     }
     if (fsOverlay) fsOverlay.classList.add('open');
     lockBackgroundScroll();
+    document.body.classList.add('cal-fs-active');
   }
 
   /* Tap a tier pill in fullscreen to toggle its description tooltip.
@@ -2633,6 +2646,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   function closeFallbackOverlay() {
     if (fsOverlay) fsOverlay.classList.remove('open');
     unlockBackgroundScroll();
+    document.body.classList.remove('cal-fs-active');
     if (fsChart) fsChart.innerHTML = '';
     if (fsLegend) fsLegend.innerHTML = '';
     if (fsControls) fsControls.innerHTML = '';
@@ -2650,7 +2664,10 @@ footer .container { display: flex; justify-content: space-between; align-items: 
      (otherwise the body stays position-fixed and the page can't be scrolled afterward). */
   function onNativeFullscreenChange() {
     var stillInFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-    if (!stillInFullscreen) unlockBackgroundScroll();
+    if (!stillInFullscreen) {
+      unlockBackgroundScroll();
+      document.body.classList.remove('cal-fs-active');
+    }
   }
   document.addEventListener('fullscreenchange', onNativeFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onNativeFullscreenChange);
