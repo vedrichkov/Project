@@ -1537,8 +1537,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .bet-value { font-size: 15.5px; }
 
   /* Calendar: SVG stays visible but small. The "Open landscape view" button
-     gives the user a way to see it bigger by rotating their phone. */
-  .cal-fullscreen-btn { display: inline-flex; }
+     (defined below the @media block) gives the user a way to see it bigger. */
   .tier-legend { grid-template-columns: 1fr; }
 
   /* Calculator: stack inputs and outputs */
@@ -1585,9 +1584,11 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .nav-card-arrow { font-size: 22px; }
 }
 
-/* "Open landscape view" button inside the calendar card. Hidden on desktop, shown on mobile. */
+/* "Open landscape view" button inside the calendar card. Mobile-first: visible by default,
+   hidden on desktop via the min-width rule below. Using mobile-first to avoid the
+   CSS source-order trap where a later base rule overrides an earlier @media rule. */
 .cal-fullscreen-btn {
-  display: none;
+  display: inline-flex;
   align-items: center; gap: 8px;
   margin-top: 12px;
   padding: 10px 14px;
@@ -1604,6 +1605,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   border-color: var(--accent);
   color: var(--ink);
 }
+@media (min-width: 601px) { .cal-fullscreen-btn { display: none; } }
 
 /* Landscape overlay: covers the viewport and rotates content 90deg so the user
    turns their phone to landscape and the calendar reads upright. */
