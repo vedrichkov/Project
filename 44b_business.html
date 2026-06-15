@@ -1536,9 +1536,9 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .bet-row { padding: 18px 22px; gap: 8px; }
   .bet-value { font-size: 15.5px; }
 
-  /* Calendar: hide SVG, show horizontal-bar mobile chart (months on Y, demand on X) */
-  #calChart { display: none; }
-  .cal-chart-mobile { display: block; }
+  /* Calendar: SVG stays visible but small. The "Open landscape view" button
+     gives the user a way to see it bigger by rotating their phone. */
+  .cal-fullscreen-btn { display: inline-flex; }
   .tier-legend { grid-template-columns: 1fr; }
 
   /* Calculator: stack inputs and outputs */
@@ -1577,60 +1577,92 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .risk-title { font-size: 15px; }
   .risk-icon { font-size: 22px; }
 
-  /* Bottom prev/next nav: stack vertically AND center the contents inside each card */
+  /* Bottom prev/next nav stacks. Cards keep arrow-on-side layout. */
   div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-  .nav-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 10px;
-    padding: 22px 24px;
-  }
-  .nav-card.nav-forward { flex-direction: column; }
-  .nav-card-arrow { order: -1; font-size: 22px; }
+  .nav-card { padding: 20px 24px; gap: 16px; grid-template-columns: 32px 1fr; }
+  .nav-card.nav-forward { grid-template-columns: 1fr 32px; }
   .nav-card-title { font-size: 20px; }
+  .nav-card-arrow { font-size: 22px; }
 }
 
-/* Mobile calendar chart (months on Y axis, demand bars on X axis). Hidden on desktop. */
-.cal-chart-mobile { display: none; margin-top: 20px; }
-.cal-row {
-  display: grid;
-  grid-template-columns: 36px 1fr 36px;
-  gap: 10px;
-  align-items: center;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255,255,255,.04);
+/* "Open landscape view" button inside the calendar card. Hidden on desktop, shown on mobile. */
+.cal-fullscreen-btn {
+  display: none;
+  align-items: center; gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(139,155,255,.08);
+  border: 1px solid rgba(139,155,255,.3);
+  border-radius: 8px;
+  color: var(--accent-text);
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  cursor: pointer;
+  transition: all .2s var(--ease);
 }
-.cal-row:last-child { border-bottom: none; }
-.cal-row-month {
-  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--ink-faint);
+.cal-fullscreen-btn:hover, .cal-fullscreen-btn:focus {
+  background: rgba(139,155,255,.14);
+  border-color: var(--accent);
+  color: var(--ink);
 }
-.cal-row.peak .cal-row-month { color: var(--accent-text); }
-.cal-row-bar-wrap {
-  position: relative;
-  height: 18px;
-  background: rgba(255,255,255,.03);
-  border-radius: 4px;
+
+/* Landscape overlay: covers the viewport and rotates content 90deg so the user
+   turns their phone to landscape and the calendar reads upright. */
+.cal-fullscreen-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 1000;
   overflow: hidden;
 }
-.cal-row-bar {
-  position: absolute; inset: 0 auto 0 0;
-  border-radius: 4px;
-  transition: width .4s var(--ease);
+.cal-fullscreen-overlay.open { display: block; }
+
+.cal-fullscreen-close {
+  position: fixed;
+  top: 14px; right: 14px;
+  z-index: 1001;
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%;
+  color: var(--ink);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
 }
-.cal-row.quiet .cal-row-bar { background: rgba(139,155,255,.22); }
-.cal-row.active .cal-row-bar { background: rgba(139,155,255,.45); }
-.cal-row.peak .cal-row-bar { background: var(--accent); box-shadow: 0 0 12px rgba(139,155,255,.4); }
-.cal-row-val {
-  font-family: var(--font-body); font-variant-numeric: tabular-nums;
-  font-size: 13px; font-weight: 600; color: var(--ink); text-align: right;
+.cal-fullscreen-close:hover { background: rgba(255,255,255,.1); border-color: var(--accent); }
+
+/* The rotation container. Pre-rotates the content -90deg so when the user turns
+   their phone to landscape (right-side down), the calendar reads upright. */
+.cal-fullscreen-rotate {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 100vh;   /* visible height becomes width after rotation */
+  height: 100vw;  /* visible width becomes height after rotation */
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center center;
+  display: flex; flex-direction: column;
+  padding: 24px 32px;
+  gap: 18px;
+  box-sizing: border-box;
 }
-.cal-row-overlay {
-  position: absolute; top: 50%; transform: translate(-50%, -50%);
-  width: 6px; height: 6px; border-radius: 50%;
-  border: 1px solid rgba(0,0,0,.3);
+.cal-fullscreen-hint {
+  font-family: var(--font-body); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-faint);
+  text-align: center;
+  flex: 0 0 auto;
+}
+.cal-fullscreen-chart {
+  flex: 1 1 auto;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.cal-fullscreen-chart svg { width: 100%; height: 100%; max-height: 100%; }
+.cal-fullscreen-legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  flex: 0 0 auto;
 }
 
 </style>
@@ -1721,7 +1753,10 @@ footer .container { display: flex; justify-content: space-between; align-items: 
           <button class="chart-toggle" data-key="e8"><span class="dot"></span>E8 exam</button>
         </div>
         <svg class="calendar-chart" id="calChart" viewBox="0 0 1080 320" preserveAspectRatio="xMidYMid meet"></svg>
-        <div class="cal-chart-mobile" id="calChart-mobile" role="img" aria-label="Demand by month, horizontal bars"></div>
+        <button type="button" class="cal-fullscreen-btn" id="calFullscreenBtn" aria-label="Open calendar in landscape view">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v6h6M20 10V4h-6M4 20l7-7M20 4l-7 7"/></svg>
+          <span>Open landscape view</span>
+        </button>
       </div>
 
       <div class="tier-legend reveal">
@@ -1737,6 +1772,17 @@ footer .container { display: flex; justify-content: space-between; align-items: 
           <div class="tier-tag">TROUGH</div>
           <div class="tier-meta">Apr-Jul, Dec, ≤ 30, pause</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Mobile landscape overlay for the calendar. Content is rotated 90deg so the user
+         turns their phone to landscape orientation to read it normally. -->
+    <div class="cal-fullscreen-overlay" id="calFullscreenOverlay" role="dialog" aria-modal="true" aria-label="Calendar in landscape view">
+      <button type="button" class="cal-fullscreen-close" id="calFullscreenClose" aria-label="Close landscape view">&times;</button>
+      <div class="cal-fullscreen-rotate">
+        <div class="cal-fullscreen-hint">Turn your phone to landscape</div>
+        <div class="cal-fullscreen-chart" id="calFullscreenChart"></div>
+        <div class="cal-fullscreen-legend" id="calFullscreenLegend"></div>
       </div>
     </div>
   </section>
@@ -2361,63 +2407,62 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     });
   }
 
-  /* ---------- Mobile calendar (horizontal bars, months on Y axis) ---------- */
-  /* Uses the same MONTHS + DATA + TIER as the SVG chart. One row per month.
-     Bar length encodes math demand (the base series); tier sets the bar color.
-     Subject toggles add small inline overlay dots showing each subject's relative position. */
-  var mobileChart = document.getElementById('calChart-mobile');
-  if (mobileChart) {
-    var mobileMaxV = 100;
-    var subjectColors = {
-      polski:   '#ffb0bd',
-      chemia:   '#97e8be',
-      fizyka:   '#d4aaff',
-      biologia: '#ff9ed9',
-      e8:       '#e8c98b'
-    };
-    var mobileOverlayState = { polski: false, chemia: false, fizyka: false, biologia: false, e8: false };
+  /* ---------- Mobile calendar landscape overlay ---------- */
+  /* The full SVG chart isn't readable at 375px width. The "Open landscape view" button
+     clones the chart + legend into a fullscreen overlay and rotates them 90deg so the
+     user turns their phone to landscape orientation to read it upright. */
+  var fsBtn = document.getElementById('calFullscreenBtn');
+  var fsOverlay = document.getElementById('calFullscreenOverlay');
+  var fsClose = document.getElementById('calFullscreenClose');
+  var fsChart = document.getElementById('calFullscreenChart');
+  var fsLegend = document.getElementById('calFullscreenLegend');
 
-    function tierFor(m) {
-      if (TIER.peak.indexOf(m) > -1) return 'peak';
-      if (TIER.active.indexOf(m) > -1) return 'active';
-      return 'quiet';
-    }
-
-    function renderMobileChart() {
-      mobileChart.innerHTML = MONTHS.map(function(m, i) {
-        var v = DATA.math[i];
-        var pct = (v / mobileMaxV) * 100;
-        var t = tierFor(m);
-        var overlays = Object.keys(mobileOverlayState).filter(function(k) { return mobileOverlayState[k]; }).map(function(k) {
-          var vv = DATA[k][i];
-          var pp = (vv / mobileMaxV) * 100;
-          return '<span class="cal-row-overlay" style="left:' + pp + '%;background:' + subjectColors[k] + ';"></span>';
-        }).join('');
-        return (
-          '<div class="cal-row ' + t + '">' +
-            '<div class="cal-row-month">' + m.toUpperCase() + '</div>' +
-            '<div class="cal-row-bar-wrap">' +
-              '<div class="cal-row-bar" style="width:' + pct + '%;"></div>' +
-              overlays +
-            '</div>' +
-            '<div class="cal-row-val">' + v + '</div>' +
-          '</div>'
-        );
-      }).join('');
-    }
-    renderMobileChart();
-
-    document.querySelectorAll('.chart-toggle').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var key = btn.dataset.key;
-        if (key === 'math') return;
-        if (mobileOverlayState.hasOwnProperty(key)) {
-          mobileOverlayState[key] = !mobileOverlayState[key];
-          renderMobileChart();
-        }
+  function openCalLandscape() {
+    if (!fsChart || !fsLegend) return;
+    var srcSvg = document.getElementById('calChart');
+    var srcLegend = document.querySelector('.tier-legend');
+    fsChart.innerHTML = '';
+    fsLegend.innerHTML = '';
+    if (srcSvg) fsChart.appendChild(srcSvg.cloneNode(true));
+    if (srcLegend) {
+      Array.prototype.forEach.call(srcLegend.children, function(card) {
+        fsLegend.appendChild(card.cloneNode(true));
       });
-    });
+    }
+    if (fsOverlay) fsOverlay.classList.add('open');
+    document.documentElement.style.overflow = 'hidden';
+    syncOrientation();
   }
+  function closeCalLandscape() {
+    if (fsOverlay) fsOverlay.classList.remove('open');
+    document.documentElement.style.overflow = '';
+    if (fsChart) fsChart.innerHTML = '';
+    if (fsLegend) fsLegend.innerHTML = '';
+  }
+  if (fsBtn) fsBtn.addEventListener('click', openCalLandscape);
+  if (fsClose) fsClose.addEventListener('click', closeCalLandscape);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && fsOverlay && fsOverlay.classList.contains('open')) closeCalLandscape();
+  });
+  /* If the device naturally rotates to landscape while the overlay is open, the rotation
+     would double up. Detect orientation and remove the transform when in landscape. */
+  function syncOrientation() {
+    if (!fsOverlay) return;
+    var rotateEl = fsOverlay.querySelector('.cal-fullscreen-rotate');
+    if (!rotateEl) return;
+    var isLandscape = window.matchMedia('(orientation: landscape)').matches;
+    if (isLandscape) {
+      rotateEl.style.transform = 'translate(-50%, -50%)';
+      rotateEl.style.width = '100vw';
+      rotateEl.style.height = '100vh';
+    } else {
+      rotateEl.style.transform = '';
+      rotateEl.style.width = '';
+      rotateEl.style.height = '';
+    }
+  }
+  window.addEventListener('resize', syncOrientation);
+  window.addEventListener('orientationchange', syncOrientation);
 
   /* ---------- Hypothesis tabs ---------- */
   document.querySelectorAll('.h-tab').forEach(function(tab) {

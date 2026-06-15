@@ -1602,19 +1602,12 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .switch { grid-template-columns: 1fr; gap: 8px; }
   .switch-btn { padding: 14px 16px; }
 
-  /* Bottom prev/next nav: stack vertically AND center the contents inside each card */
+  /* Bottom prev/next nav stacks. Cards keep arrow-on-side layout. */
   div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-  .nav-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 10px;
-    padding: 22px 24px;
-  }
-  .nav-card.nav-forward { flex-direction: column; }
-  .nav-card-arrow { order: -1; font-size: 22px; }
+  .nav-card { padding: 20px 24px; gap: 16px; grid-template-columns: 32px 1fr; }
+  .nav-card.nav-forward { grid-template-columns: 1fr 32px; }
   .nav-card-title { font-size: 20px; }
+  .nav-card-arrow { font-size: 22px; }
 
   /* Mobile timeline navigator: prev arrow, dropdown showing current step, next arrow */
   .timeline-track { display: none; }
