@@ -1,0 +1,20 @@
+# Ignore everything in this folder by default.
+# Only the three public pages + index + README are committed.
+# The strategy research files, decks, trends CSVs, lock files,
+# and other working materials stay local and are never pushed.
+
+*
+
+# Whitelist the public site only
+!.gitignore
+!README.md
+!index.html
+!44a_users.html
+!44b_business.html
+!44c_features.html
+
+# Visual assets referenced by the three pages
+!eduboomLogo.svg
+!AD1.gif
+!AD2.gif
+!AD3.jpg
