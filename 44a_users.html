@@ -1537,6 +1537,64 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   50% { transform: translateY(3px); opacity: 1; }
 }
 
+/* ============================================================
+   Mobile, max-width 600px. Target: 375px minimum, modern phones.
+   Strategy: keep widgets functional, stack and resize.
+   ============================================================ */
+@media (max-width: 600px) {
+  :root { --pad: 18px; --section-pad: 64px; --card-pad: 22px; --card-gap: 14px; }
+  body { font-size: 16px; }
+
+  /* Hero */
+  .hero-title { font-size: clamp(34px, 8.5vw, 52px); line-height: 1.05; }
+  .hero-lead { font-size: 17px; }
+
+  /* Topbar brand */
+  .topbar { padding: 12px 18px; }
+  .brand-sub { display: none; }
+
+  /* Stats grid stacks to 1 column */
+  .stats { grid-template-columns: 1fr !important; gap: 12px; margin: 36px 0 24px; }
+  .stat { padding: 24px 22px 20px; }
+  .stat-num { font-size: clamp(46px, 12vw, 72px); margin-bottom: 14px; }
+
+  /* Signal cards, key on top instead of beside */
+  .signal { grid-template-columns: 1fr !important; gap: 12px; padding: 22px; }
+  .signal-key { font-size: 32px; line-height: 1.05; }
+  .signal-title { font-size: 19px; }
+
+  /* Signal audit table fits at 375px */
+  .signal-audit thead th { font-size: 8.5px; padding: 6px 4px; letter-spacing: 0.08em; }
+  .signal-audit thead th:last-child { width: 56px; }
+  .signal-audit tbody td { padding: 8px 6px; font-size: 12.5px; }
+  .signal-audit tbody td:last-child { width: 56px; }
+
+  /* Signal stats grid (4 cells) becomes 2x2 */
+  .signal-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .signal-stat-num { font-size: clamp(28px, 8vw, 42px); }
+
+  /* Trio cards stack to 1 column */
+  .trio { grid-template-columns: 1fr !important; gap: 14px; }
+  .trio-card { padding: 22px; }
+  .trio-card-name { font-size: 22px; min-height: auto; padding-bottom: 14px; margin-bottom: 14px; }
+
+  /* Reserve cards (angles container) stack to 1 column */
+  .angles { grid-template-columns: 1fr !important; gap: 12px; }
+
+  /* Ad-phone mockup scales to fit, kept centered */
+  .ad-phone { max-width: 320px; margin: 0 auto; }
+  .flow-meta { flex-direction: column; gap: 6px; }
+  .switch { grid-template-columns: 1fr; gap: 8px; }
+  .switch-btn { padding: 14px 16px; }
+
+  /* Bottom prev/next nav stacks. Inline style is overridden via attribute selector */
+  div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+  .nav-card { padding: 20px 24px; gap: 16px; grid-template-columns: 32px 1fr; }
+  .nav-card.nav-forward { grid-template-columns: 1fr 32px; }
+  .nav-card-title { font-size: 20px; }
+  .nav-card-arrow { font-size: 22px; }
+}
+
 </style>
 </head>
 <body class="dir-midnight" data-dir="midnight">
