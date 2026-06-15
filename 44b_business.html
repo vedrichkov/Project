@@ -1638,43 +1638,99 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 }
 .cal-fullscreen-close:hover { background: rgba(255,255,255,.1); border-color: var(--accent); }
 
-/* Fullscreen content fills the overlay. Native Fullscreen API is used when available
-   (Android Chrome, iPad Safari, desktop). On iPhone Safari which lacks element fullscreen,
-   this CSS overlay is the fallback, and the user rotates their phone naturally if needed. */
+/* Fullscreen fallback overlay (iPhone Safari). Mirrors the native :fullscreen layout. */
 .cal-fullscreen-content {
   position: absolute;
-  inset: 60px 20px 20px;
+  inset: 60px 18px 18px;
   display: flex; flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 .cal-fullscreen-chart {
   flex: 1 1 auto;
+  min-height: 0;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.cal-fullscreen-chart svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+.cal-fullscreen-chart svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; display: block; }
 .cal-fullscreen-legend {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
   flex: 0 0 auto;
+  display: flex; flex-direction: row; justify-content: center;
+  gap: 14px;
 }
+.cal-fullscreen-legend .tier-card {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 100px;
+  min-height: auto;
+}
+.cal-fullscreen-legend .tier-card .tier-meta { display: none; }
+.cal-fullscreen-legend .tier-card .tier-tag {
+  font-size: 10px; letter-spacing: 0.16em; margin: 0;
+}
+.cal-fullscreen-legend .tier-card::before { margin: 0; }
 
-/* When a calendar card is in native fullscreen, fit its contents to the viewport */
+/* Native fullscreen layout. Calendar SVG fills available space; subject toggles
+   and tier legend take the minimum (compact pills only, no description text).
+   Layout adapts automatically to portrait OR landscape via flexbox + SVG aspect ratio. */
 .chart-wrap:fullscreen,
 .chart-wrap:-webkit-full-screen {
   background: var(--bg);
-  padding: 60px 24px 24px;
-  overflow: auto;
+  padding: 16px 18px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
+/* Compact subject toggles */
+.chart-wrap:fullscreen .chart-controls,
+.chart-wrap:-webkit-full-screen .chart-controls {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  gap: 6px;
+}
+.chart-wrap:fullscreen .chart-toggle,
+.chart-wrap:-webkit-full-screen .chart-toggle {
+  padding: 6px 10px; font-size: 10.5px;
+}
+/* Calendar fills all remaining vertical space, fits to width either way */
 .chart-wrap:fullscreen .calendar-chart,
 .chart-wrap:-webkit-full-screen .calendar-chart {
   flex: 1 1 auto;
-  width: 100%;
-  height: auto;
-  max-height: calc(100vh - 200px);
+  width: 100%; height: 100%;
+  min-height: 0;
+  display: block;
+}
+/* Tier legend compacted to a single row of dot + tag (PEAK / ACTIVE / TROUGH) */
+.chart-wrap:fullscreen .tier-legend,
+.chart-wrap:-webkit-full-screen .tier-legend {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 14px;
+  margin: 0;
+  grid-template-columns: none;
+}
+.chart-wrap:fullscreen .tier-card,
+.chart-wrap:-webkit-full-screen .tier-card {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 100px;
+  min-height: auto;
+}
+.chart-wrap:fullscreen .tier-card .tier-meta,
+.chart-wrap:-webkit-full-screen .tier-card .tier-meta { display: none; }
+.chart-wrap:fullscreen .tier-card .tier-tag,
+.chart-wrap:-webkit-full-screen .tier-card .tier-tag {
+  font-size: 10px; letter-spacing: 0.16em; margin: 0;
+}
+.chart-wrap:fullscreen .tier-card::before,
+.chart-wrap:-webkit-full-screen .tier-card::before {
+  margin: 0;
 }
 
 </style>
@@ -2478,6 +2534,25 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   if (fsClose) fsClose.addEventListener('click', closeFallbackOverlay);
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && fsOverlay && fsOverlay.classList.contains('open')) closeFallbackOverlay();
+  });
+
+  /* Nudge a reflow on orientation change so the SVG inside the native fullscreen
+     element re-fits the new viewport dimensions. Some mobile browsers don't redraw
+     SVG aspect-ratio fits without an explicit poke. */
+  function nudgeFullscreenReflow() {
+    var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fsEl) return;
+    var svg = fsEl.querySelector('svg.calendar-chart');
+    if (!svg) return;
+    svg.style.display = 'none';
+    /* Force layout */ void svg.offsetHeight;
+    svg.style.display = '';
+  }
+  window.addEventListener('orientationchange', function() {
+    setTimeout(nudgeFullscreenReflow, 100);
+  });
+  window.addEventListener('resize', function() {
+    setTimeout(nudgeFullscreenReflow, 100);
   });
 
   /* ---------- Hypothesis tabs ---------- */
