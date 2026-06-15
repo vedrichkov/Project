@@ -1638,37 +1638,43 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 }
 .cal-fullscreen-close:hover { background: rgba(255,255,255,.1); border-color: var(--accent); }
 
-/* The rotation container. Pre-rotates the content -90deg so when the user turns
-   their phone to landscape (right-side down), the calendar reads upright. */
-.cal-fullscreen-rotate {
+/* Fullscreen content fills the overlay. Native Fullscreen API is used when available
+   (Android Chrome, iPad Safari, desktop). On iPhone Safari which lacks element fullscreen,
+   this CSS overlay is the fallback, and the user rotates their phone naturally if needed. */
+.cal-fullscreen-content {
   position: absolute;
-  top: 50%; left: 50%;
-  width: 100vh;   /* visible height becomes width after rotation */
-  height: 100vw;  /* visible width becomes height after rotation */
-  transform: translate(-50%, -50%) rotate(-90deg);
-  transform-origin: center center;
+  inset: 60px 20px 20px;
   display: flex; flex-direction: column;
-  padding: 24px 32px;
-  gap: 18px;
-  box-sizing: border-box;
-}
-.cal-fullscreen-hint {
-  font-family: var(--font-body); font-size: 11px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--ink-faint);
-  text-align: center;
-  flex: 0 0 auto;
+  gap: 16px;
 }
 .cal-fullscreen-chart {
   flex: 1 1 auto;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.cal-fullscreen-chart svg { width: 100%; height: 100%; max-height: 100%; }
+.cal-fullscreen-chart svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
 .cal-fullscreen-legend {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   flex: 0 0 auto;
+}
+
+/* When a calendar card is in native fullscreen, fit its contents to the viewport */
+.chart-wrap:fullscreen,
+.chart-wrap:-webkit-full-screen {
+  background: var(--bg);
+  padding: 60px 24px 24px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.chart-wrap:fullscreen .calendar-chart,
+.chart-wrap:-webkit-full-screen .calendar-chart {
+  flex: 1 1 auto;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 200px);
 }
 
 </style>
@@ -1752,10 +1758,10 @@ footer .container { display: flex; justify-content: space-between; align-items: 
       <div class="chart-wrap reveal">
         <div class="chart-controls">
           <button class="chart-toggle active" data-key="math"><span class="dot"></span>Math</button>
-          <button class="chart-toggle" data-key="polski"><span class="dot"></span>Polski (Polish)</button>
-          <button class="chart-toggle" data-key="chemia"><span class="dot"></span>Chemia (Chemistry)</button>
-          <button class="chart-toggle" data-key="fizyka"><span class="dot"></span>Fizyka (Physics)</button>
-          <button class="chart-toggle" data-key="biologia"><span class="dot"></span>Biologia (Biology)</button>
+          <button class="chart-toggle" data-key="polski"><span class="dot"></span>Polish</button>
+          <button class="chart-toggle" data-key="chemia"><span class="dot"></span>Chemistry</button>
+          <button class="chart-toggle" data-key="fizyka"><span class="dot"></span>Physics</button>
+          <button class="chart-toggle" data-key="biologia"><span class="dot"></span>Biology</button>
           <button class="chart-toggle" data-key="e8"><span class="dot"></span>E8 exam</button>
         </div>
         <svg class="calendar-chart" id="calChart" viewBox="0 0 1080 320" preserveAspectRatio="xMidYMid meet"></svg>
@@ -1781,12 +1787,10 @@ footer .container { display: flex; justify-content: space-between; align-items: 
       </div>
     </div>
 
-    <!-- Mobile landscape overlay for the calendar. Content is rotated 90deg so the user
-         turns their phone to landscape orientation to read it normally. -->
-    <div class="cal-fullscreen-overlay" id="calFullscreenOverlay" role="dialog" aria-modal="true" aria-label="Calendar in landscape view">
-      <button type="button" class="cal-fullscreen-close" id="calFullscreenClose" aria-label="Close landscape view">&times;</button>
-      <div class="cal-fullscreen-rotate">
-        <div class="cal-fullscreen-hint">Turn your phone to landscape</div>
+    <!-- Fallback fullscreen overlay for browsers without the Fullscreen API (iOS Safari iPhone). -->
+    <div class="cal-fullscreen-overlay" id="calFullscreenOverlay" role="dialog" aria-modal="true" aria-label="Calendar in full screen">
+      <button type="button" class="cal-fullscreen-close" id="calFullscreenClose" aria-label="Close full screen">&times;</button>
+      <div class="cal-fullscreen-content">
         <div class="cal-fullscreen-chart" id="calFullscreenChart"></div>
         <div class="cal-fullscreen-legend" id="calFullscreenLegend"></div>
       </div>
@@ -2413,17 +2417,30 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     });
   }
 
-  /* ---------- Mobile calendar landscape overlay ---------- */
-  /* The full SVG chart isn't readable at 375px width. The "Open landscape view" button
-     clones the chart + legend into a fullscreen overlay and rotates them 90deg so the
-     user turns their phone to landscape orientation to read it upright. */
+  /* ---------- Calendar fullscreen view ---------- */
+  /* Tries the native Fullscreen API first (clean, hides browser chrome, supported by
+     Android Chrome, iPad Safari, desktop). Falls back to a CSS overlay for iPhone Safari
+     which doesn't support element-level fullscreen. */
   var fsBtn = document.getElementById('calFullscreenBtn');
   var fsOverlay = document.getElementById('calFullscreenOverlay');
   var fsClose = document.getElementById('calFullscreenClose');
   var fsChart = document.getElementById('calFullscreenChart');
   var fsLegend = document.getElementById('calFullscreenLegend');
 
-  function openCalLandscape() {
+  function openNativeFullscreen() {
+    var card = document.querySelector('.chart-wrap');
+    if (!card) return false;
+    var req = card.requestFullscreen || card.webkitRequestFullscreen || card.mozRequestFullScreen || card.msRequestFullscreen;
+    if (!req) return false;
+    try {
+      var result = req.call(card);
+      if (result && typeof result.catch === 'function') {
+        result.catch(function() { openFallbackOverlay(); });
+      }
+      return true;
+    } catch (e) { return false; }
+  }
+  function openFallbackOverlay() {
     if (!fsChart || !fsLegend) return;
     var srcSvg = document.getElementById('calChart');
     var srcLegend = document.querySelector('.tier-legend');
@@ -2437,38 +2454,31 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     }
     if (fsOverlay) fsOverlay.classList.add('open');
     document.documentElement.style.overflow = 'hidden';
-    syncOrientation();
   }
-  function closeCalLandscape() {
+  function openCalFullscreen() {
+    if (!openNativeFullscreen()) openFallbackOverlay();
+  }
+  function exitNativeFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+      var exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+      if (exit) exit.call(document);
+    }
+  }
+  function closeFallbackOverlay() {
     if (fsOverlay) fsOverlay.classList.remove('open');
     document.documentElement.style.overflow = '';
     if (fsChart) fsChart.innerHTML = '';
     if (fsLegend) fsLegend.innerHTML = '';
   }
-  if (fsBtn) fsBtn.addEventListener('click', openCalLandscape);
-  if (fsClose) fsClose.addEventListener('click', closeCalLandscape);
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && fsOverlay && fsOverlay.classList.contains('open')) closeCalLandscape();
-  });
-  /* If the device naturally rotates to landscape while the overlay is open, the rotation
-     would double up. Detect orientation and remove the transform when in landscape. */
-  function syncOrientation() {
-    if (!fsOverlay) return;
-    var rotateEl = fsOverlay.querySelector('.cal-fullscreen-rotate');
-    if (!rotateEl) return;
-    var isLandscape = window.matchMedia('(orientation: landscape)').matches;
-    if (isLandscape) {
-      rotateEl.style.transform = 'translate(-50%, -50%)';
-      rotateEl.style.width = '100vw';
-      rotateEl.style.height = '100vh';
-    } else {
-      rotateEl.style.transform = '';
-      rotateEl.style.width = '';
-      rotateEl.style.height = '';
-    }
+  function closeCalFullscreen() {
+    exitNativeFullscreen();
+    closeFallbackOverlay();
   }
-  window.addEventListener('resize', syncOrientation);
-  window.addEventListener('orientationchange', syncOrientation);
+  if (fsBtn) fsBtn.addEventListener('click', openCalFullscreen);
+  if (fsClose) fsClose.addEventListener('click', closeFallbackOverlay);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && fsOverlay && fsOverlay.classList.contains('open')) closeFallbackOverlay();
+  });
 
   /* ---------- Hypothesis tabs ---------- */
   document.querySelectorAll('.h-tab').forEach(function(tab) {
