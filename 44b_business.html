@@ -1509,8 +1509,23 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .hero-title { font-size: clamp(34px, 8.5vw, 52px); line-height: 1.05; }
   .hero-lead { font-size: 17px; }
 
-  /* Topbar */
-  .topbar { padding: 12px 18px; }
+  /* Topbar: stack centered. Logo on top, nav links below, both horizontally centered. */
+  .topbar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 10px;
+    padding: 12px var(--pad);
+  }
+  .topbar .brand { justify-self: center; }
+  .topbar-nav {
+    justify-self: center;
+    grid-column: 1;
+    order: 2;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .topbar-nav a { padding: 6px 10px; font-size: 10.5px; }
   .brand-sub { display: none; }
 
   /* Section heads */
@@ -1521,9 +1536,9 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .bet-row { padding: 18px 22px; gap: 8px; }
   .bet-value { font-size: 15.5px; }
 
-  /* Calendar chart: keep functional, allow horizontal scroll on narrow screens */
-  .cal-chart-wrap, .chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  #calChart { min-width: 600px; }
+  /* Calendar: hide SVG, show horizontal-bar mobile chart (months on Y, demand on X) */
+  #calChart { display: none; }
+  .cal-chart-mobile { display: block; }
   .tier-legend { grid-template-columns: 1fr; }
 
   /* Calculator: stack inputs and outputs */
@@ -1562,12 +1577,60 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .risk-title { font-size: 15px; }
   .risk-icon { font-size: 22px; }
 
-  /* Bottom prev/next nav stacks. Override inline grid */
+  /* Bottom prev/next nav: stack vertically AND center the contents inside each card */
   div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-  .nav-card { padding: 20px 24px; gap: 16px; grid-template-columns: 32px 1fr; }
-  .nav-card.nav-forward { grid-template-columns: 1fr 32px; }
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 22px 24px;
+  }
+  .nav-card.nav-forward { flex-direction: column; }
+  .nav-card-arrow { order: -1; font-size: 22px; }
   .nav-card-title { font-size: 20px; }
-  .nav-card-arrow { font-size: 22px; }
+}
+
+/* Mobile calendar chart (months on Y axis, demand bars on X axis). Hidden on desktop. */
+.cal-chart-mobile { display: none; margin-top: 20px; }
+.cal-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.cal-row:last-child { border-bottom: none; }
+.cal-row-month {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.cal-row.peak .cal-row-month { color: var(--accent-text); }
+.cal-row-bar-wrap {
+  position: relative;
+  height: 18px;
+  background: rgba(255,255,255,.03);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cal-row-bar {
+  position: absolute; inset: 0 auto 0 0;
+  border-radius: 4px;
+  transition: width .4s var(--ease);
+}
+.cal-row.quiet .cal-row-bar { background: rgba(139,155,255,.22); }
+.cal-row.active .cal-row-bar { background: rgba(139,155,255,.45); }
+.cal-row.peak .cal-row-bar { background: var(--accent); box-shadow: 0 0 12px rgba(139,155,255,.4); }
+.cal-row-val {
+  font-family: var(--font-body); font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 600; color: var(--ink); text-align: right;
+}
+.cal-row-overlay {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.3);
 }
 
 </style>
@@ -1658,6 +1721,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
           <button class="chart-toggle" data-key="e8"><span class="dot"></span>E8 exam</button>
         </div>
         <svg class="calendar-chart" id="calChart" viewBox="0 0 1080 320" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="cal-chart-mobile" id="calChart-mobile" role="img" aria-label="Demand by month, horizontal bars"></div>
       </div>
 
       <div class="tier-legend reveal">
@@ -2293,6 +2357,64 @@ footer .container { display: flex; justify-content: space-between; align-items: 
         if (key === 'math') return; // math is the base bar, always shown
         var el = svg.querySelector('[data-overlay="' + key + '"]');
         if (el) el.classList.toggle('show', btn.classList.contains('active'));
+      });
+    });
+  }
+
+  /* ---------- Mobile calendar (horizontal bars, months on Y axis) ---------- */
+  /* Uses the same MONTHS + DATA + TIER as the SVG chart. One row per month.
+     Bar length encodes math demand (the base series); tier sets the bar color.
+     Subject toggles add small inline overlay dots showing each subject's relative position. */
+  var mobileChart = document.getElementById('calChart-mobile');
+  if (mobileChart) {
+    var mobileMaxV = 100;
+    var subjectColors = {
+      polski:   '#ffb0bd',
+      chemia:   '#97e8be',
+      fizyka:   '#d4aaff',
+      biologia: '#ff9ed9',
+      e8:       '#e8c98b'
+    };
+    var mobileOverlayState = { polski: false, chemia: false, fizyka: false, biologia: false, e8: false };
+
+    function tierFor(m) {
+      if (TIER.peak.indexOf(m) > -1) return 'peak';
+      if (TIER.active.indexOf(m) > -1) return 'active';
+      return 'quiet';
+    }
+
+    function renderMobileChart() {
+      mobileChart.innerHTML = MONTHS.map(function(m, i) {
+        var v = DATA.math[i];
+        var pct = (v / mobileMaxV) * 100;
+        var t = tierFor(m);
+        var overlays = Object.keys(mobileOverlayState).filter(function(k) { return mobileOverlayState[k]; }).map(function(k) {
+          var vv = DATA[k][i];
+          var pp = (vv / mobileMaxV) * 100;
+          return '<span class="cal-row-overlay" style="left:' + pp + '%;background:' + subjectColors[k] + ';"></span>';
+        }).join('');
+        return (
+          '<div class="cal-row ' + t + '">' +
+            '<div class="cal-row-month">' + m.toUpperCase() + '</div>' +
+            '<div class="cal-row-bar-wrap">' +
+              '<div class="cal-row-bar" style="width:' + pct + '%;"></div>' +
+              overlays +
+            '</div>' +
+            '<div class="cal-row-val">' + v + '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+    renderMobileChart();
+
+    document.querySelectorAll('.chart-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.dataset.key;
+        if (key === 'math') return;
+        if (mobileOverlayState.hasOwnProperty(key)) {
+          mobileOverlayState[key] = !mobileOverlayState[key];
+          renderMobileChart();
+        }
       });
     });
   }

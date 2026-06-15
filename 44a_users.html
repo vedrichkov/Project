@@ -1549,8 +1549,23 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .hero-title { font-size: clamp(34px, 8.5vw, 52px); line-height: 1.05; }
   .hero-lead { font-size: 17px; }
 
-  /* Topbar brand */
-  .topbar { padding: 12px 18px; }
+  /* Topbar: stack centered. Logo on top, nav links below, both horizontally centered. */
+  .topbar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 10px;
+    padding: 12px var(--pad);
+  }
+  .topbar .brand { justify-self: center; }
+  .topbar-nav {
+    justify-self: center;
+    grid-column: 1;
+    order: 2;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .topbar-nav a { padding: 6px 10px; font-size: 10.5px; }
   .brand-sub { display: none; }
 
   /* Stats grid stacks to 1 column */
@@ -1587,13 +1602,67 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .switch { grid-template-columns: 1fr; gap: 8px; }
   .switch-btn { padding: 14px 16px; }
 
-  /* Bottom prev/next nav stacks. Inline style is overridden via attribute selector */
+  /* Bottom prev/next nav: stack vertically AND center the contents inside each card */
   div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-  .nav-card { padding: 20px 24px; gap: 16px; grid-template-columns: 32px 1fr; }
-  .nav-card.nav-forward { grid-template-columns: 1fr 32px; }
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 22px 24px;
+  }
+  .nav-card.nav-forward { flex-direction: column; }
+  .nav-card-arrow { order: -1; font-size: 22px; }
   .nav-card-title { font-size: 20px; }
-  .nav-card-arrow { font-size: 22px; }
+
+  /* Mobile timeline navigator: prev arrow, dropdown showing current step, next arrow */
+  .timeline-track { display: none; }
+  .tl-nav-mobile {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    gap: 8px;
+    align-items: stretch;
+    padding: 6px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+  }
+  .tl-nav-arrow {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    color: var(--accent-text);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all .2s var(--ease);
+    padding: 0;
+  }
+  .tl-nav-arrow:hover:not(:disabled) { border-color: var(--accent); color: var(--ink); background: rgba(139,155,255,.1); }
+  .tl-nav-arrow:disabled { opacity: .3; cursor: not-allowed; }
+  .tl-nav-select {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    padding: 10px 32px 10px 14px;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--accent-text) 50%), linear-gradient(135deg, var(--accent-text) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .tl-nav-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 }
+
+/* Default desktop: mobile timeline navigator is hidden */
+.tl-nav-mobile { display: none; }
 
 </style>
 </head>
@@ -2007,6 +2076,11 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 
           <div class="timeline">
             <div class="timeline-track" id="timeline-track"></div>
+            <div class="tl-nav-mobile" id="tl-nav-mobile">
+              <button type="button" class="tl-nav-arrow" id="tl-nav-prev" aria-label="Previous step">&larr;</button>
+              <select class="tl-nav-select" id="tl-nav-select" aria-label="Jump to step"></select>
+              <button type="button" class="tl-nav-arrow" id="tl-nav-next" aria-label="Next step">&rarr;</button>
+            </div>
           </div>
 
           <div class="flow-detail" id="flow-detail"></div>
@@ -2294,11 +2368,50 @@ footer .container { display: flex; justify-content: space-between; align-items: 
       n.classList.toggle("done", i < state.step);
     });
     if (track) track.style.setProperty("--progress", progressFor(state.step, total));
+
+    // Mobile timeline navigator: populate select on flow change, sync prev/next button states
+    var navSelect = document.getElementById("tl-nav-select");
+    if (navSelect) {
+      if (navSelect.children.length !== total) {
+        navSelect.innerHTML = c.flow.map(function (f, i) {
+          var label = (f.name || f.stage || ("Step " + (i + 1)));
+          return '<option value="' + i + '">Step ' + (i + 1) + ', ' + label + '</option>';
+        }).join('');
+      }
+      navSelect.value = String(state.step);
+    }
+    var prevBtn = document.getElementById("tl-nav-prev");
+    var nextBtn = document.getElementById("tl-nav-next");
+    if (prevBtn) prevBtn.disabled = state.step === 0;
+    if (nextBtn) nextBtn.disabled = state.step >= total - 1;
+
     // Sync phone screen state
     var screen = document.querySelector(".ad-phone-screen");
     var step = c.flow[state.step];
     if (screen && step && step.phoneState) {
       screen.setAttribute("data-phone-state", step.phoneState);
+    }
+  }
+
+  function initTimelineNavMobile() {
+    var navSelect = document.getElementById("tl-nav-select");
+    var prevBtn = document.getElementById("tl-nav-prev");
+    var nextBtn = document.getElementById("tl-nav-next");
+    if (navSelect) {
+      navSelect.addEventListener("change", function () {
+        setStep(parseInt(navSelect.value, 10) || 0);
+      });
+    }
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function () {
+        if (state.step > 0) setStep(state.step - 1);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        var c = CREATIVES[state.creative];
+        if (state.step < c.flow.length - 1) setStep(state.step + 1);
+      });
     }
   }
 
@@ -2371,7 +2484,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   }
 
   /* ---------- boot ---------- */
-  function boot() { initObservers(); initSignals(); initShip(); }
+  function boot() { initObservers(); initSignals(); initShip(); initTimelineNavMobile(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 })();

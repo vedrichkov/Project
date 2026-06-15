@@ -531,7 +531,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 .seq-arrow {
   font-family: var(--font-mono); font-size: 16px; color: var(--accent-text);
 }
-@media (max-width: 720px) { .seq { flex-direction: column; align-items: flex-start; } .seq-arrow { transform: rotate(90deg); } }
+@media (max-width: 720px) { .seq { flex-direction: column; align-items: center; } .seq-step { text-align: center; } .seq-arrow { transform: rotate(90deg); } }
 
 /* Why / How / Risk boxes */
 .box {
@@ -728,8 +728,23 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .hero-title { font-size: clamp(34px, 8.5vw, 52px); line-height: 1.05; }
   .hero-lead { font-size: 17px; }
 
-  /* Topbar */
-  .topbar { padding: 12px 18px; }
+  /* Topbar: stack centered. Logo on top, nav links below, both horizontally centered. */
+  .topbar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 10px;
+    padding: 12px var(--pad);
+  }
+  .topbar .brand { justify-self: center; }
+  .topbar-nav {
+    justify-self: center;
+    grid-column: 1;
+    order: 2;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .topbar-nav a { padding: 6px 10px; font-size: 10.5px; }
   .brand-sub { display: none; }
 
   /* Section heads */
@@ -751,12 +766,23 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .box-head { font-size: 11px; }
   .box p { font-size: 14.5px; }
 
-  /* Bottom prev/next nav stacks */
+  /* Sequence steps already stack at 720px, now ensure they're centered horizontally */
+  .seq { align-items: center; }
+  .seq-step { text-align: center; }
+
+  /* Bottom prev/next nav: stack vertically AND center the contents inside each card */
   div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-  .nav-card { padding: 20px 24px; gap: 16px; grid-template-columns: 32px 1fr; }
-  .nav-card.nav-forward { grid-template-columns: 1fr 32px; }
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 22px 24px;
+  }
+  .nav-card.nav-forward { flex-direction: column; }
+  .nav-card-arrow { order: -1; font-size: 22px; }
   .nav-card-title { font-size: 20px; }
-  .nav-card-arrow { font-size: 22px; }
 }
 
 </style>
