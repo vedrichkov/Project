@@ -2521,6 +2521,30 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   var fsLegend = document.getElementById('calFullscreenLegend');
   var fsControls = document.getElementById('calFullscreenControls');
 
+  /* Scroll lock helpers: prevent background scroll while fullscreen is open.
+     Uses position: fixed on body to survive iOS Safari, which ignores overflow: hidden alone. */
+  var savedScrollY = 0;
+  function lockBackgroundScroll() {
+    savedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + savedScrollY + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  }
+  function unlockBackgroundScroll() {
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, savedScrollY);
+  }
+
   function openNativeFullscreen() {
     var card = document.querySelector('.chart-wrap');
     if (!card) return false;
@@ -2531,6 +2555,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
       if (result && typeof result.catch === 'function') {
         result.catch(function() { openFallbackOverlay(); });
       }
+      lockBackgroundScroll();
       return true;
     } catch (e) { return false; }
   }
@@ -2573,7 +2598,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
       });
     }
     if (fsOverlay) fsOverlay.classList.add('open');
-    document.documentElement.style.overflow = 'hidden';
+    lockBackgroundScroll();
   }
 
   /* Tap a tier pill in fullscreen to toggle its description tooltip.
@@ -2607,9 +2632,10 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   }
   function closeFallbackOverlay() {
     if (fsOverlay) fsOverlay.classList.remove('open');
-    document.documentElement.style.overflow = '';
+    unlockBackgroundScroll();
     if (fsChart) fsChart.innerHTML = '';
     if (fsLegend) fsLegend.innerHTML = '';
+    if (fsControls) fsControls.innerHTML = '';
   }
   function closeCalFullscreen() {
     exitNativeFullscreen();
@@ -2620,6 +2646,16 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && fsOverlay && fsOverlay.classList.contains('open')) closeFallbackOverlay();
   });
+  /* When the user exits native fullscreen via Esc or system back, unlock the scroll
+     (otherwise the body stays position-fixed and the page can't be scrolled afterward). */
+  function onNativeFullscreenChange() {
+    var stillInFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+    if (!stillInFullscreen) unlockBackgroundScroll();
+  }
+  document.addEventListener('fullscreenchange', onNativeFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onNativeFullscreenChange);
+  document.addEventListener('mozfullscreenchange', onNativeFullscreenChange);
+  document.addEventListener('MSFullscreenChange', onNativeFullscreenChange);
 
   /* Nudge a reflow on orientation change so the SVG inside the native fullscreen
      element re-fits the new viewport dimensions. Some mobile browsers don't redraw
