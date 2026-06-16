@@ -1618,6 +1618,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     gap: 8px;
     align-items: stretch;
     padding: 6px;
+    margin: 0 0 28px;
     background: rgba(255,255,255,.03);
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 12px;
@@ -2056,6 +2057,13 @@ footer .container { display: flex; justify-content: space-between; align-items: 
           </div>
           </div>
 
+        <!-- mobile-only step navigator, sits directly under the phone, hidden on desktop -->
+        <div class="tl-nav-mobile" id="tl-nav-mobile">
+          <button type="button" class="tl-nav-arrow" id="tl-nav-prev" aria-label="Previous step">&larr;</button>
+          <select class="tl-nav-select" id="tl-nav-select" aria-label="Jump to step"></select>
+          <button type="button" class="tl-nav-arrow" id="tl-nav-next" aria-label="Next step">&rarr;</button>
+        </div>
+
         <!-- flow -->
         <div class="flow-col">
           <div class="flow-hook">
@@ -2070,11 +2078,6 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 
           <div class="timeline">
             <div class="timeline-track" id="timeline-track"></div>
-            <div class="tl-nav-mobile" id="tl-nav-mobile">
-              <button type="button" class="tl-nav-arrow" id="tl-nav-prev" aria-label="Previous step">&larr;</button>
-              <select class="tl-nav-select" id="tl-nav-select" aria-label="Jump to step"></select>
-              <button type="button" class="tl-nav-arrow" id="tl-nav-next" aria-label="Next step">&rarr;</button>
-            </div>
           </div>
 
           <div class="flow-detail" id="flow-detail"></div>
