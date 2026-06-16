@@ -1990,12 +1990,12 @@ body.cal-fs-active footer { display: none !important; }
       <!-- Phase tabs: budget breakdown + interactive phase selector in one -->
       <div style="margin-top: 28px;"></div>
       <div class="phase-tabs reveal" role="tablist" aria-label="Launch phase">
-        <button type="button" class="phase-tab" role="tab" data-phase="prep" aria-selected="false">
-          <span class="phase-tab-when">Jun 1-30</span>
+        <button type="button" class="phase-tab active" role="tab" data-phase="prep" aria-selected="true">
+          <span class="phase-tab-when">Jun 16-30</span>
           <span class="phase-tab-name">Prep</span>
           <span class="phase-tab-spend"><b>~<span id="junePrepStrip">500</span> €</b><span class="phase-tab-pct">10%</span></span>
         </button>
-        <button type="button" class="phase-tab active" role="tab" data-phase="phase1" aria-selected="true">
+        <button type="button" class="phase-tab" role="tab" data-phase="phase1" aria-selected="false">
           <span class="phase-tab-when">Jul 1 to end of Aug</span>
           <span class="phase-tab-name">Phase 1, calibrate</span>
           <span class="phase-tab-spend"><b>~<span id="phase1Strip">1,500</span> €</b><span class="phase-tab-pct">30%</span></span>
@@ -2008,7 +2008,7 @@ body.cal-fs-active footer { display: none !important; }
       </div>
 
       <!-- Phase wrapper, content swaps based on data-active -->
-      <div class="phase-wrapper reveal" data-active="phase1">
+      <div class="phase-wrapper reveal" data-active="prep">
 
         <!-- PREP PANEL -->
         <div class="phase-panel" data-phase="prep">
@@ -2020,7 +2020,7 @@ body.cal-fs-active footer { display: none !important; }
             <div class="bet-card">
               <div class="bet-card-head">
                 <span class="bet-channel">Paid awareness</span>
-                <span class="bet-card-meta">Meta CTR test &middot; Jun 15-28 &middot; <b>~<span id="ctrTestSpend">350 €</span></b></span>
+                <span class="bet-card-meta">Meta CTR test &middot; Jun 23-29 &middot; <b>~<span id="ctrTestSpend">350 €</span></b></span>
               </div>
               <p class="bet-body">Split across the 3 ads. Day-5 read on which has the highest CTR and which gets engaged comments. <b>CAC is not the read.</b></p>
               <ul class="bet-ad-list">
@@ -2049,7 +2049,7 @@ body.cal-fs-active footer { display: none !important; }
             <div class="bet-card">
               <div class="bet-card-head">
                 <span class="bet-channel">Intent capture</span>
-                <span class="bet-card-meta">Google Ads smoke test &middot; Jun 1-14 &middot; <b>~<span id="smokeTestSpend">150 €</span></b></span>
+                <span class="bet-card-meta">Google Ads smoke test &middot; Jun 16-22 &middot; <b>~<span id="smokeTestSpend">150 €</span></b></span>
               </div>
               <p class="bet-body">Single Google Ads cluster, live for a week. Plumbing validation only. <b>CAC is not the read.</b></p>
               <ul class="bet-ad-list">
@@ -2069,7 +2069,7 @@ body.cal-fs-active footer { display: none !important; }
                   <h5>Carry into Phase 1</h5>
                   <ul>
                     <li>All checks green &rarr; expand to 6 clusters</li>
-                    <li>Jun 29-30 &rarr; lock allocations, all 6 cells live</li>
+                    <li>Jun 30 &rarr; lock allocations, all 6 cells live</li>
                   </ul>
                 </div>
               </div>
