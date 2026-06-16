@@ -354,6 +354,7 @@ section { padding: var(--section-pad) 0; position: relative; }
 .flow-hook-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; }
 .flow-hook-line { font-family: var(--font-display); font-size: var(--hook-size); line-height: 1.08; letter-spacing: -0.015em; color: var(--ink); }
 .flow-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--ink-soft); }
+.flow-meta:empty { display: none; }
 .flow-meta span { display: flex; align-items: center; gap: 7px; }
 .flow-meta span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 
@@ -1654,8 +1655,8 @@ footer .container { display: flex; justify-content: space-between; align-items: 
   .tl-nav-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 }
 
-/* Default desktop: mobile timeline navigator is hidden */
-.tl-nav-mobile { display: none; }
+/* Mobile-first: tl-nav-mobile visible by default (shown on mobile), hidden on desktop. */
+@media (min-width: 601px) { .tl-nav-mobile { display: none; } }
 
 </style>
 </head>
@@ -2181,7 +2182,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     {
       id: "grade",
       hook: "“Boost your grade in one term.”",
-      meta: ["Reels / TikTok, 30s", "→ eduboom.pl/5"],
+      meta: [],
       flow: [
         { phoneState: "ad", url: "TikTok / Reels, paid", stage: "AD", name: "The hook", quote: "“Boost your grade in one term.”",
           note: "Meme earns the scroll-stop. The claim invites verification. <b>Skeptic clicks to test, not to commit.</b>" },
@@ -2200,7 +2201,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     {
       id: "iget",
       hook: "“I get it.”",
-      meta: ["Reels / TikTok, 20s", "→ eduboom.pl/i-get-it"],
+      meta: [],
       flow: [
         { phoneState: "ad", url: "TikTok / Reels, paid", stage: "AD", name: "The hook", quote: "“When Eduboom explains it and it finally clicks.”",
           note: "Borrowed Leo recognition meme. <b>Share-driven, not click-driven.</b> Built for TikTok stitches and FB-group circulation." },
@@ -2221,7 +2222,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     {
       id: "tutoring",
       hook: "“Tutoring, or a weekend trip?”",
-      meta: ["Static + carousel", "→ eduboom.pl/zamiast-korepetycji"],
+      meta: [],
       flow: [
         { phoneState: "ad", url: "Meta static + carousel, paid", stage: "AD", name: "The hook", quote: "“896 zł a month for tutoring. Or 46 zł, and a weekend trip.”",
           note: "Price reframe. Parent already shopping for tutoring. <b>Angle is the math, not the discovery.</b>" },
